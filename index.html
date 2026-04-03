@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <title>SpeedStory // ARCADE RUSH V13.1 - ENHANCED</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <script src="https://unpkg.com/peerjs@1.5.2/dist/peerjs.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&display=swap');
+        :root { --neon: #0ff; --mag: #f0f; --dark: #050508; --nitro: #0088ff; }
+        body { margin: 0; background: var(--dark); color: #fff; font-family: 'Orbitron', sans-serif; overflow: hidden; }
+
+        /* --- GARAGE UI --- */
+        #setup {
+            position: fixed; inset: 0; z-index: 1000;
+            background: radial-gradient(circle, #0a1520 0%, #020205 100%);
+            display: flex; align-items: center; justify-content: center;
+        }
+        .garage-card {
+            width: 500px; padding: 40px; border: 2px solid var(--neon);
+            background: rgba(0,0,0,0.9); box-shadow: 0 0 50px rgba(0,255,255,0.15);
+            text-align: center;
+            position: relative;
+        }
+        .car-selector { display: flex; gap: 10px; margin: 20px 0; }
+        .car-option {
+            flex: 1; padding: 15px; border: 1px solid #333; cursor: pointer;
+            font-size: 10px; transition: 0.3s; background: #111;
+        }
+        .car-option:hover, .car-option.active { border-color: var(--neon); background: rgba(0,255,255,0.1); color: var(--neon); }
+        input, button {
+            width: 100%; margin: 10px 0; padding: 12px; font-family: 'Orbitron';
+            background: #000; border: 1px solid #333; color: #fff; box-sizing: border-box; outline: none;
+        }
+        input:focus { border-color: var(--neon); }
+        button { background: var(--neon); color: #000; border: none; font-weight: 900; cursor: pointer; transition: 0.2s;}
+        button:hover { background: #fff; box-shadow: 0 0 15px #fff; }
+
+        .peer-info { font-size: 10px; color: var(--mag); margin-top: 10px; text-align: left; }
+
+        /* --- HUD --- */
+        #hud { position: absolute; inset: 0; pointer-events: none; z-index: 100; display: none; padding: 30px; }
+        
+        .dash-left { position: absolute; bottom: 30px; left: 30px; }
+        .kmh-box { border-left: 5px solid var(--mag); padding-left: 15px; margin-bottom: 15px;}
+        .kmh { font-size: 72px; font-weight: 900; font-style: italic; color: #fff; line-height: 0.8; text-shadow: 0 0 20px rgba(255,0,255,0.5); }
+        
+        .nitro-container { width: 200px; height: 10px; background: rgba(255,255,255,0.1); border: 1px solid #333; position: relative; }
+        #nitro-bar { height: 100%; width: 100%; background: var(--nitro); box-shadow: 0 0 10px var(--nitro); transition: width 0.1s linear; }
+        
+        .dash-right { position: absolute; top: 30px; right: 30px; text-align: right; }
+        .score-lbl { font-size: 12px; opacity: 0.6; letter-spacing: 2px;}
+        .score-val { font-size: 36px; font-weight: 700; color: var(--neon); text-shadow: 0 0 10px var(--neon); }
+    </style>
+</head>
+<body>
+
+    <div id="setup">
+        <div class="garage-card">
+            <h1 style="letter-spacing: 8px; color: var(--neon); margin-top:0; text-shadow: 0 0 20px var(--neon);">ARCADE V13.1</h1>
+            <p style="font-size: 10px; opacity: 0.7;">SPACE: N2O BOOST // W-A-S-D: DRIVE</p>
+            
+            <div class="car-selector">
+                <div class="car-option active" onclick="selectCar('sedan', this)">SEDAN<br><small>Dengeli</small></div>
+                <div class="car-option" onclick="selectCar('sport', this)">SPORT<br><small>Hızlı/Sert</small></div>
+                <div class="car-option" onclick="selectCar('drift', this)">DRIFT<br><small>Kaygan</small></div>
+            </div>
+
+            <div class="peer-info">SENİN KODUN: <span id="my-peer-id" style="color: #fff;">Bağlanıyor...</span></div>
+            <input type="text" id="peer-target" placeholder="MULTIPLAYER HEDEF KODU (OPSİYONEL)">
+            <button onclick="startGame()">SİSTEMİ BAŞLAT</button>
+        </div>
+    </div>
+
+    <div id="hud">
+        <div class="dash-left">
+            <div class="kmh-box">
+                <div style="font-size: 10px; opacity: 0.5;">KM/H</div>
+                <div class="kmh" id="kmh">000</div>
+            </div>
+            <div style="font-size: 10px; margin-bottom: 5px; color: var(--nitro);">N2O CAPACITY</div>
+            <div class="nitro-container"><div id="nitro-bar"></div></div>
+        </div>
+        
+        <div class="dash-right">
+            <div class="score-lbl">DATA COLLECTED</div>
+            <div class="score-val" id="score">0</div>
+        </div>
+    </div>
+
+    <script>
+        // --- MULTIPLAYER (PEER.JS) SETUP ---
+        const peer = new Peer();
+        let conn = null;
+        let isMultiplayerActive = false;
+
+        peer.on('open', (id) => {
+            document.getElementById('my-peer-id').innerText = id;
+        });
+
+        peer.on('connection', (connection) => {
+            conn = connection;
+            isMultiplayerActive = true;
+            setupNetworkListeners();
+        });
+
+        function connectToPeer() {
+            const targetId = document.getElementById('peer-target').value;
+            if (targetId) {
+                conn = peer.connect(targetId);
+                conn.on('open', () => {
+                    isMultiplayerActive = true;
+                    setupNetworkListeners();
+                });
+            }
+        }
+
+        let networkData = { x: 0, y: 0, r: 0, carType: 'sedan' };
+        function setupNetworkListeners() {
+            conn.on('data', (data) => { networkData = data; });
+        }
+
+        // --- GAME LOGIC ---
+        let game, player, enemyPlayer, walls, orbs;
+        let selectedCarType = 'sedan';
+        let currentScore = 0;
+        let nitroAmount = 100;
+        
+        const CAR_SPECS = {
+            sedan: { accel: 1500, turn: 280, drag: 0.7, max: 600, color: 0x00ffff },
+            sport: { accel: 2500, turn: 350, drag: 0.5, max: 800, color: 0xffffff },
+            drift: { accel: 1800, turn: 450, drag: 0.15, max: 650, color: 0xff00ff } // Drag düşürüldü (Daha kaygan)
+        };
+
+        class ArcadeScene extends Phaser.Scene {
+            preload() { this.createAssets(); }
+
+            create() {
+                this.physics.world.setBounds(-4000, -4000, 8000, 8000);
+                this.add.tileSprite(0, 0, 8000, 8000, 'asphalt').setDepth(-10);
+
+                walls = this.physics.add.staticGroup();
+                orbs = this.physics.add.group();
+                this.buildCity();
+
+                const spec = CAR_SPECS[selectedCarType];
+                player = this.physics.add.sprite((Math.random() * 400) - 200, 0, 'car_body').setTint(spec.color).setDepth(50);
+                player.setDamping(true).setDrag(spec.drag).setAngularDrag(1500).setMaxVelocity(spec.max);
+
+                // ENEMY PLAYER (MULTIPLAYER)
+                enemyPlayer = this.add.sprite(-9999, -9999, 'car_body').setTint(0xff0000).setDepth(49).setAlpha(0.7);
+
+                this.physics.add.collider(player, walls, () => {
+                    this.cameras.main.shake(150, 0.008);
+                    player.setVelocity(player.body.velocity.x * 0.2, player.body.velocity.y * 0.2);
+                });
+
+                this.physics.add.overlap(player, orbs, this.collectOrb, null, this);
+
+                // KAMERA VE MİNİMAP (GELİŞTİRME)
+                this.cameras.main.startFollow(player, true, 0.08, 0.08).setZoom(1);
+                
+                let minimap = this.cameras.add(window.innerWidth - 250, window.innerHeight - 250, 220, 220).setZoom(0.03).setName('mini');
+                minimap.setBackgroundColor(0x000000);
+                minimap.startFollow(player);
+                minimap.ignore(this.add.rectangle(window.innerWidth - 140, window.innerHeight - 140, 224, 224).setStrokeStyle(4, 0x00ffff).setScrollFactor(0)); // Minimap Çerçevesi
+
+                this.skids = this.add.particles(0, 0, 'skid', {
+                    speed: 0, scale: 0.6, alpha: { start: 0.3, end: 0 }, lifespan: 1200, frequency: -1, blendMode: 'ADD'
+                });
+                
+                this.nitroFlames = this.add.particles(0, 0, 'flame', {
+                    speed: { min: 50, max: 200 }, scale: { start: 1, end: 0 }, alpha: { start: 1, end: 0 },
+                    lifespan: 300, blendMode: 'ADD', frequency: -1
+                });
+
+                this.keys = this.input.keyboard.addKeys('W,A,S,D,SPACE');
+            }
+
+            update() {
+                const spec = CAR_SPECS[selectedCarType];
+                let isBoosting = false;
+                let activeAccel = spec.accel;
+                let activeMax = spec.max;
+
+                if (this.keys.SPACE.isDown && nitroAmount > 0 && this.keys.W.isDown) {
+                    isBoosting = true;
+                    nitroAmount -= 0.5;
+                    activeAccel = spec.accel * 2.5;
+                    activeMax = spec.max * 1.5;
+                    
+                    let offset = new Phaser.Math.Vector2(-25, 0).rotate(player.rotation);
+                    this.nitroFlames.emitParticleAt(player.x + offset.x, player.y + offset.y);
+                    this.cameras.main.setZoom(Phaser.Math.Linear(this.cameras.main.zoom, 0.9, 0.05));
+                } else {
+                    if (nitroAmount < 100) nitroAmount += 0.1;
+                    this.cameras.main.setZoom(Phaser.Math.Linear(this.cameras.main.zoom, 1, 0.05));
+                }
+
+                player.setMaxVelocity(activeMax);
+                document.getElementById('nitro-bar').style.width = nitroAmount + '%';
+
+                // GELİŞMİŞ SÜRÜŞ (Drift aracı için bağımsız vektör hesaplaması)
+                if(this.keys.W.isDown) {
+                    this.physics.velocityFromRotation(player.rotation, activeAccel, player.body.acceleration);
+                } else if(this.keys.S.isDown) {
+                    this.physics.velocityFromRotation(player.rotation, -spec.accel/2, player.body.acceleration);
+                } else {
+                    player.setAcceleration(0);
+                }
+
+                if(this.keys.A.isDown) player.setAngularVelocity(-spec.turn);
+                else if(this.keys.D.isDown) player.setAngularVelocity(spec.turn);
+                else player.setAngularVelocity(0);
+
+                const realKmh = Math.floor(player.body.speed * 0.35);
+                document.getElementById('kmh').innerText = realKmh.toString().padStart(3, '0');
+
+                if((selectedCarType === 'drift' && realKmh > 50 && (this.keys.A.isDown || this.keys.D.isDown)) || 
+                   (realKmh > 120 && (this.keys.A.isDown || this.keys.D.isDown))) {
+                    this.skids.emitParticleAt(player.x, player.y);
+                }
+
+                // MULTIPLAYER SYNC
+                if (isMultiplayerActive && conn && conn.open) {
+                    conn.send({ x: player.x, y: player.y, r: player.rotation, carType: selectedCarType });
+                    
+                    // Diğer oyuncuyu güncelle (Smooth lerp)
+                    enemyPlayer.x = Phaser.Math.Linear(enemyPlayer.x, networkData.x, 0.3);
+                    enemyPlayer.y = Phaser.Math.Linear(enemyPlayer.y, networkData.y, 0.3);
+                    enemyPlayer.rotation = networkData.r;
+                    enemyPlayer.setTint(CAR_SPECS[networkData.carType || 'sedan'].color);
+                }
+            }
+
+            collectOrb(player, orb) {
+                orb.destroy();
+                currentScore += 100;
+                document.getElementById('score').innerText = currentScore;
+                this.cameras.main.flash(150, 0, 255, 255, 0.3);
+            }
+
+            buildCity() {
+                const blockSize = 1400;
+                for(let x = -3500; x <= 3500; x += blockSize) {
+                    for(let y = -3500; y <= 3500; y += blockSize) {
+                        if(Math.abs(x) < 500 && Math.abs(y) < 500) continue;
+
+                        let b = walls.create(x, y, 'hitbox');
+                        b.setDisplaySize(900, 900).refreshBody();
+
+                        let rect = this.add.rectangle(x, y, 900, 900, 0x050508);
+                        rect.setStrokeStyle(4, 0x1a1a25, 1);
+                        
+                        // İç aydınlatma detayları
+                        this.add.rectangle(x, y, 860, 860).setStrokeStyle(1, 0x0ff, 0.1);
+
+                        if (Math.random() > 0.3) {
+                            let ox = x + (Math.random() > 0.5 ? 700 : -700);
+                            let oy = y + (Math.random() > 0.5 ? 700 : -700);
+                            let orb = orbs.create(ox, oy, 'orb').setTint(0x00ffff);
+                            this.tweens.add({ targets: orb, scale: 1.5, duration: 800, yoyo: true, repeat: -1 });
+                        }
+
+                        this.add.rectangle(x, y + blockSize/2, blockSize, 6, 0xffffff, 0.05).setDepth(-5);
+                        this.add.rectangle(x + blockSize/2, y, 6, blockSize, 0xffffff, 0.05).setDepth(-5);
+                    }
+                }
+            }
+
+            createAssets() {
+                let g1 = this.make.graphics({x:0, y:0, add:false});
+                g1.fillStyle(0x0a0a0e).fillRect(0,0,256,256);
+                for(let i=0; i<150; i++) {
+                    g1.fillStyle(0x00ffff, Math.random()*0.05); // Neon asfalt kalıntıları
+                    g1.fillCircle(Math.random()*256, Math.random()*256, 1);
+                }
+                g1.generateTexture('asphalt', 256, 256);
+
+                let g2 = this.make.graphics({x:0, y:0, add:false});
+                g2.fillStyle(0xffffff).fillRoundedRect(0,0,50,24, 4);
+                g2.fillStyle(0x000000).fillRect(5,4,30,16);
+                g2.fillStyle(0x00ffff).fillRect(45,3,5,4).fillRect(45,17,5,4); // Farlar
+                g2.fillStyle(0xff0000).fillRect(0,3,3,4).fillRect(0,17,3,4);   // Stoplar
+                g2.generateTexture('car_body', 50, 24);
+
+                let g3 = this.make.graphics({x:0, y:0, add:false});
+                g3.fillStyle(0xffffff).fillRect(0,0,32,32);
+                g3.generateTexture('hitbox', 32, 32);
+                
+                let g4 = this.make.graphics({x:0, y:0, add:false});
+                g4.fillStyle(0x00ffff).fillRect(0,0,10,10); // Neon drift izi
+                g4.generateTexture('skid', 10, 10);
+                
+                let g5 = this.make.graphics({x:0, y:0, add:false});
+                g5.fillStyle(0xffffff).fillCircle(10, 10, 10);
+                g5.generateTexture('orb', 20, 20);
+                
+                let g6 = this.make.graphics({x:0, y:0, add:false});
+                g6.fillStyle(0xffffff).fillRect(0,0,12,12);
+                g6.generateTexture('flame', 12, 12);
+            }
+        }
+
+        function selectCar(type, el) {
+            selectedCarType = type;
+            document.querySelectorAll('.car-option').forEach(opt => opt.classList.remove('active'));
+            el.classList.add('active');
+        }
+
+        function startGame() {
+            connectToPeer(); // Hedef kod girildiyse bağlanır
+            document.getElementById('setup').style.display = 'none';
+            document.getElementById('hud').style.display = 'block';
+            new Phaser.Game({
+                type: Phaser.WEBGL, width: window.innerWidth, height: window.innerHeight,
+                parent: document.body, physics: { default: 'arcade' }, scene: ArcadeScene
+            });
+        }
+    </script>
+</body>
+</html>
