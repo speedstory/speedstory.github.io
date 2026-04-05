@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SpeedStory v16.1 | Premium Arcade</title>
+    <script src="https://cdn.jsdelivr.net/npm/phaser@3.60.0/dist/phaser.min.js"></script>
+    <style>
+        /* --- GOOGLE FONTS --- */
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Rajdhani:wght@300;500;700&display=swap');
+
+        :root {
+            --neon-blue: #00f2ff;
+            --neon-pink: #ff00ea;
+            --neon-green: #00ff62;
+            --dark-bg: #030305;
+            --card-bg: rgba(10, 10, 15, 0.95);
+            --transition-speed: 0.4s;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; }
+
+        body {
+            background: #000;
+            color: #fff;
+            font-family: 'Rajdhani', sans-serif;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        /* --- 1. BOOT SCREEN --- */
+        #boot-screen {
+            position: fixed; inset: 0; z-index: 1000;
+            background: radial-gradient(circle at center, #0a0a1a 0%, #000 100%);
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            transition: all 1s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .main-btn {
+            background: transparent;
+            border: 1px solid var(--neon-blue);
+            color: var(--neon-blue);
+            padding: 18px 60px;
+            font-family: 'Orbitron';
+            font-size: 1.2rem;
+            letter-spacing: 8px;
+            text-transform: uppercase;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+            transition: var(--transition-speed);
+            clip-path: polygon(10% 0, 100% 0, 90% 100%, 0 100%);
+        }
+
+        .main-btn:hover {
+            background: var(--neon-blue);
+            color: #000;
+            box-shadow: 0 0 30px var(--neon-blue);
+            transform: scale(1.05);
+        }
+
+        .main-btn::before {
+            content: ''; position: absolute; top: 0; left: -100%; width: 100%; height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+            transition: 0.5s;
+        }
+
+        .main-btn:hover::before { left: 100%; }
+
+        /* --- 2. INTRO CONTAINER --- */
+        #intro-container {
+            position: fixed; inset: 0; z-index: 999; background: #000;
+            display: none; opacity: 0; transition: opacity 1.5s ease;
+        }
+
+        #intro-video {
+            width: 100%; height: 100%; object-fit: cover;
+            filter: contrast(1.1) brightness(0.9);
+        }
+
+        /* --- 3. LOADING SCREEN --- */
+        #loading-screen {
+            position: fixed; inset: 0; z-index: 998; background: var(--dark-bg);
+            display: none; flex-direction: column; align-items: center; justify-content: center;
+        }
+
+        .loader-wrapper { width: 350px; text-align: left; }
+
+        .loader-text {
+            font-family: 'Orbitron'; font-size: 0.8rem; color: var(--neon-blue);
+            margin-bottom: 10px; letter-spacing: 4px; display: flex; justify-content: space-between;
+        }
+
+        .loader-bar-container {
+            width: 100%; height: 2px; background: rgba(255,255,255,0.05);
+            position: relative; overflow: hidden;
+        }
+
+        #loader-fill {
+            width: 0%; height: 100%; background: var(--neon-blue);
+            box-shadow: 0 0 15px var(--neon-blue);
+            transition: width 2s linear;
+        }
+
+        /* --- 4. GARAJ (SETUP) --- */
+        #garage-ui {
+            position: fixed; inset: 0; z-index: 500; display: none;
+            background: url('https://images.unsplash.com/photo-1614850523296-d8c1af93d400?auto=format&fit=crop&w=1920&q=80');
+            background-size: cover; background-position: center;
+            align-items: center; justify-content: center;
+        }
+
+        #garage-ui::before {
+            content: ''; position: absolute; inset: 0; 
+            background: radial-gradient(circle at left, rgba(0,242,255,0.05) 0%, rgba(0,0,0,0.9) 70%);
+        }
+
+        .garage-card {
+            width: 850px; height: 550px; background: var(--card-bg);
+            border: 1px solid rgba(0, 242, 255, 0.2);
+            backdrop-filter: blur(20px); padding: 40px; position: relative;
+            display: flex; gap: 40px; animation: slideUp 0.8s ease-out;
+        }
+
+        @keyframes slideUp { from { opacity: 0; transform: translateY(50px); } to { opacity: 1; transform: translateY(0); } }
+
+        .garage-left { flex: 1.5; text-align: left; }
+        .garage-right { flex: 1; display: flex; flex-direction: column; justify-content: space-between; }
+
+        .game-title {
+            font-family: 'Orbitron'; font-size: 3rem; font-weight: 900;
+            color: #fff; margin-bottom: 5px; text-shadow: 0 0 20px rgba(0,242,255,0.5);
+        }
+
+        .car-grid { display: grid; grid-template-columns: 1fr; gap: 15px; margin: 30px 0; }
+
+        .car-item {
+            padding: 20px; border: 1px solid rgba(255,255,255,0.1);
+            background: rgba(255,255,255,0.02); cursor: pointer; transition: 0.3s;
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        .car-item:hover { background: rgba(0, 242, 255, 0.05); border-color: var(--neon-blue); }
+        .car-item.active { 
+            background: var(--neon-blue); color: #000; border-color: var(--neon-blue); 
+            box-shadow: 0 0 20px rgba(0, 242, 255, 0.3);
+        }
+
+        .stat-group { margin-bottom: 15px; }
+        .stat-label { font-size: 0.7rem; color: #888; letter-spacing: 2px; margin-bottom: 5px; }
+        .stat-bar { width: 100%; height: 4px; background: #222; border-radius: 2px; overflow: hidden; }
+        .stat-fill { height: 100%; background: var(--neon-blue); width: 0%; transition: width 0.5s ease; }
+
+        /* --- 5. HUD --- */
+        #hud {
+            position: fixed; inset: 0; pointer-events: none; z-index: 100;
+            display: none; padding: 40px;
+        }
+
+        .speedo-wrap {
+            position: absolute; bottom: 40px; right: 40px; text-align: right;
+        }
+
+        .kmh-val {
+            font-family: 'Orbitron'; font-size: 80px; font-weight: 900;
+            color: #fff; line-height: 0.8; font-style: italic;
+        }
+
+        .rev-bar-container {
+            width: 300px; height: 8px; background: rgba(255,255,255,0.1);
+            margin-top: 10px; display: flex; gap: 2px;
+        }
+
+        .rev-segment { flex: 1; height: 100%; background: #333; transition: 0.1s; }
+        .rev-active { background: var(--neon-blue); box-shadow: 0 0 10px var(--neon-blue); }
+        .rev-danger { background: var(--neon-pink); box-shadow: 0 0 10px var(--neon-pink); }
+
+        .mission-panel {
+            position: absolute; top: 40px; left: 40px; 
+            border-left: 3px solid var(--neon-green); padding-left: 20px;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="boot-screen">
+        <h1 style="font-family:'Orbitron'; font-size:0.8rem; letter-spacing:10px; margin-bottom:40px; opacity:0.6;">LAKRLAKR5DEV PRESENTS</h1>
+        <button class="main-btn" onclick="sequenceIntro()">Oyuna Basla</button>
+    </div>
+
+    <div id="intro-container">
+        <video id="intro-video" src="https://speedstory.github.io/video.mp4" playsinline></video>
+    </div>
+
+    <div id="loading-screen">
+        <div class="loader-wrapper">
+            <div class="loader-text"><span>OYUN YÜKLENİYOR</span><span id="load-pc">0%</span></div>
+            <div class="loader-bar-container"><div id="loader-fill"></div></div>
+        </div>
+    </div>
+
+    <div id="garage-ui">
+        <div class="garage-card">
+            <div class="garage-left">
+                <div class="game-title">SpeedStory</div>
+                <div style="font-size:1.2rem; color:var(--neon-blue); letter-spacing:5px; margin-bottom:30px;">VERSION 16.1</div>
+                
+                <div class="car-grid">
+                    <div class="car-item active" onclick="selectCar('sedan', this)">
+                        <span>EXECUTIVE SEDAN</span><small>DENGELİ</small>
+                    </div>
+                    <div class="car-item" onclick="selectCar('sport', this)">
+                        <span>NEON INTERCEPTOR</span><small>HIZLI</small>
+                    </div>
+                    <div class="car-item" onclick="selectCar('drift', this)">
+                        <span>TOKYO DRIFTER</span><small>ESNEK</small>
+                    </div>
+                </div>
+
+                <div style="color:#666; font-size:0.9rem; line-height:1.6;">
+                    W, A, S, D tuşları ile sürüş yapın.<br>
+                    SPACE (BOŞLUK) ile Nitro aktifleştirin.<br>
+                    Şehirdeki enerji kürelerini toplayarak puan kazanın.
+                </div>
+            </div>
+
+            <div class="garage-right">
+                <div class="stats-panel">
+                    <div class="stat-group">
+                        <div class="stat-label">TOP SPEED</div>
+                        <div class="stat-bar"><div id="stat-speed" class="stat-fill" style="width: 60%;"></div></div>
+                    </div>
+                    <div class="stat-group">
+                        <div class="stat-label">ACCELERATION</div>
+                        <div class="stat-bar"><div id="stat-accel" class="stat-fill" style="width: 50%;"></div></div>
+                    </div>
+                    <div class="stat-group">
+                        <div class="stat-label">HANDLING</div>
+                        <div class="stat-bar"><div id="stat-handling" class="stat-fill" style="width: 75%;"></div></div>
+                    </div>
+                </div>
+                <button class="main-btn" style="width:100%; clip-path:none;" onclick="initSimulation()">SİMÜLASYONU BAŞLAT</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="hud">
+        <div class="mission-panel">
+            <div style="font-size:0.7rem; color:var(--neon-green); letter-spacing:3px;">ACTIVE SESSION</div>
+            <div style="font-size:1.5rem; font-weight:700;">FREE ROAM : NEON CITY</div>
+            <div id="score-display" style="color:var(--neon-blue); margin-top:5px;">SCORE: 000000</div>
+        </div>
+
+        <div class="speedo-wrap">
+            <div style="font-size:0.8rem; color:rgba(255,255,255,0.4); margin-bottom:5px;">VELOCITY UNITS / HR</div>
+            <div class="kmh-val" id="kmh-ui">000</div>
+            <div class="rev-bar-container" id="rev-bar">
+                </div>
+            <div style="display:flex; justify-content:space-between; margin-top:10px; font-size:0.7rem;">
+                <span style="color:var(--neon-blue);">N2O SYSTEM ACTIVE</span>
+                <span id="nitro-percent">100%</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        /* -----------------------------------------------------------
+           1. SEQUENCE & UI CONTROLS
+        ----------------------------------------------------------- */
+        
+        function sequenceIntro() {
+            const boot = document.getElementById('boot-screen');
+            const intro = document.getElementById('intro-container');
+            const video = document.getElementById('intro-video');
+
+            boot.style.opacity = '0';
+            setTimeout(() => {
+                boot.style.display = 'none';
+                intro.style.display = 'block';
+                setTimeout(() => { intro.style.opacity = '1'; }, 50);
+                video.play().catch(e => sequenceLoading()); // Hata olursa geç
+            }, 1000);
+
+            video.onended = () => {
+                intro.style.opacity = '0';
+                setTimeout(() => {
+                    intro.style.display = 'none';
+                    sequenceLoading();
+                }, 3000);
+            };
+        }
+
+        function sequenceLoading() {
+            const ls = document.getElementById('loading-screen');
+            const fill = document.getElementById('loader-fill');
+            const pcText = document.getElementById('load-pc');
+            ls.style.display = 'flex';
+
+            let progress = 0;
+            const interval = setInterval(() => {
+                progress += Math.random() * 5;
+                if(progress >= 100) {
+                    progress = 100;
+                    clearInterval(interval);
+                    setTimeout(() => {
+                        ls.style.display = 'none';
+                        document.getElementById('garage-ui').style.display = 'flex';
+                    }, 500);
+                }
+                fill.style.width = progress + '%';
+                pcText.innerText = Math.floor(progress) + '%';
+            }, 50);
+        }
+
+        /* -----------------------------------------------------------
+           2. CAR DATA & SELECTION
+        ----------------------------------------------------------- */
+
+        const CAR_DATABASE = {
+            sedan: { name: "Executive Sedan", accel: 1300, turn: 280, drag: 0.7, max: 650, color: 0x00f2ff, stats: [60, 50, 75] },
+            sport: { name: "Neon Interceptor", accel: 2200, turn: 340, drag: 0.5, max: 950, color: 0xffffff, stats: [95, 85, 40] },
+            drift: { name: "Tokyo Drifter", accel: 1500, turn: 480, drag: 0.15, max: 700, color: 0xff00ea, stats: [55, 65, 95] }
+        };
+
+        let selectedKey = 'sedan';
+
+        function selectCar(key, element) {
+            selectedKey = key;
+            document.querySelectorAll('.car-item').forEach(i => i.classList.remove('active'));
+            element.classList.add('active');
+
+            const data = CAR_DATABASE[key];
+            document.getElementById('stat-speed').style.width = data.stats[0] + '%';
+            document.getElementById('stat-accel').style.width = data.stats[1] + '%';
+            document.getElementById('stat-handling').style.width = data.stats[2] + '%';
+        }
+
+        function initSimulation() {
+            document.getElementById('garage-ui').style.display = 'none';
+            document.getElementById('hud').style.display = 'block';
+            createRevBar();
+            new Phaser.Game(phaserConfig);
+        }
+
+        function createRevBar() {
+            const container = document.getElementById('rev-bar');
+            for(let i=0; i<30; i++) {
+                const seg = document.createElement('div');
+                seg.className = 'rev-segment';
+                container.appendChild(seg);
+            }
+        }
+
+        /* -----------------------------------------------------------
+           3. PHASER GAME ENGINE (THE CORE)
+        ----------------------------------------------------------- */
+
+        class SpeedScene extends Phaser.Scene {
+            constructor() { super('SpeedScene'); }
+
+            preload() {
+                this.graphics = this.make.graphics({x:0, y:0, add:false});
+                
+                // --- ASSET GENERATION ---
+                // Grid/Road
+                this.graphics.clear().fillStyle(0x0a0a12).fillRect(0,0,512,512);
+                this.graphics.lineStyle(2, 0x1a1a2a).strokeRect(0,0,512,512);
+                this.graphics.generateTexture('road_tile', 512, 512);
+
+                // Player Car
+                this.graphics.clear().fillStyle(0xffffff).fillRoundedRect(0,0,56,28,6);
+                this.graphics.fillStyle(0x000000).fillRect(10,4,32,20); // Window
+                this.graphics.fillStyle(0x00f2ff).fillRect(48,4,6,6).fillRect(48,18,6,6); // Headlights
+                this.graphics.generateTexture('car_body', 56, 28);
+
+                // Props
+                this.graphics.clear().fillStyle(0xffffff).fillCircle(5,5,5);
+                this.graphics.generateTexture('particle', 10, 10);
+            }
+
+            create() {
+                // World Properties
+                const WORLD_SIZE = 12000;
+                this.physics.world.setBounds(-WORLD_SIZE/2, -WORLD_SIZE/2, WORLD_SIZE, WORLD_SIZE);
+                
+                // Tilesprite Background
+                this.bg = this.add.tileSprite(0, 0, WORLD_SIZE, WORLD_SIZE, 'road_tile').setDepth(-10);
+
+                // Groups
+                this.buildings = this.physics.add.staticGroup();
+                this.energyOrbs = this.physics.add.group();
+                this.decor = this.add.group();
+
+                this.generateCity(WORLD_SIZE);
+
+                // Player Setup
+                const carData = CAR_DATABASE[selectedKey];
+                this.player = this.physics.add.sprite(0, 0, 'car_body').setTint(carData.color);
+                this.player.setDamping(true).setDrag(carData.drag).setAngularDrag(1800).setMaxVelocity(carData.max);
+                
+                // Physics
+                this.physics.add.collider(this.player, this.buildings, this.handleCollision, null, this);
+                this.physics.add.overlap(this.player, this.energyOrbs, this.collectOrb, null, this);
+
+                // Camera
+                this.cameras.main.startFollow(this.player, true, 0.1, 0.1);
+                this.cameras.main.setLerp(0.1, 0.1);
+
+                // Input
+                this.keys = this.input.keyboard.addKeys('W,A,S,D,SPACE');
+                
+                // FX
+                this.setupParticles();
+
+                // Game State
+                this.nitro = 100;
+                this.score = 0;
+            }
+
+            generateCity(size) {
+                const spacing = 1500;
+                for(let x = -size/2 + 500; x < size/2; x += spacing) {
+                    for(let y = -size/2 + 500; y < size/2; y += spacing) {
+                        // Start point safety
+                        if(Math.abs(x) < 800 && Math.abs(y) < 800) continue;
+
+                        const bW = 600 + Math.random() * 400;
+                        const bH = 600 + Math.random() * 400;
+                        
+                        // Physics Block
+                        const block = this.buildings.create(x, y, null).setVisible(false);
+                        block.body.setSize(bW, bH);
+
+                        // Visual Block
+                        const rect = this.add.rectangle(x, y, bW, bH, 0x050508);
+                        rect.setStrokeStyle(2, 0x00f2ff, 0.2);
+                        
+                        // Neon Windows
+                        if(Math.random() > 0.5) {
+                            const neon = this.add.rectangle(x, y, bW - 40, bH - 40).setStrokeStyle(1, 0x00f2ff, 0.05);
+                            this.tweens.add({ targets: neon, alpha: 0.2, duration: 1000 + Math.random()*2000, yoyo: true, repeat: -1 });
+                        }
+
+                        // Collectibles
+                        if(Math.random() > 0.6) {
+                            const orb = this.energyOrbs.create(x + 800, y + 800, 'particle').setTint(0x00ff62);
+                            this.add.pointlight(x + 800, y + 800, 0x00ff62, 100, 0.5);
+                        }
+                    }
+                }
+            }
+
+            setupParticles() {
+                // Drift Smoke
+                this.driftFX = this.add.particles(0, 0, 'particle', {
+                    scale: { start: 0.6, end: 0 },
+                    alpha: { start: 0.2, end: 0 },
+                    lifespan: 1000,
+                    frequency: -1,
+                    blendMode: 'ADD',
+                    tint: 0x444444
+                });
+
+                // Nitro Flame
+                this.nitroFX = this.add.particles(0, 0, 'particle', {
+                    speed: { min: 200, max: 400 },
+                    scale: { start: 0.8, end: 0 },
+                    alpha: { start: 0.8, end: 0 },
+                    lifespan: 500,
+                    frequency: -1,
+                    blendMode: 'ADD',
+                    tint: 0x00f2ff
+                });
+            }
+
+            update() {
+                const spec = CAR_DATABASE[selectedKey];
+                const speed = this.player.body.speed;
+                const isMoving = speed > 30;
+
+                // --- 1. MOVEMENT LOGIC ---
+                let currentAccel = spec.accel;
+                let boostActive = false;
+
+                if(this.keys.W.isDown) {
+                    if(this.keys.SPACE.isDown && this.nitro > 0 && isMoving) {
+                        currentAccel *= 2.5;
+                        this.nitro -= 0.5;
+                        boostActive = true;
+                        
+                        // Fire FX
+                        const backPos = new Phaser.Math.Vector2(-30, 0).rotate(this.player.rotation);
+                        this.nitroFX.emitParticleAt(this.player.x + backPos.x, this.player.y + backPos.y);
+                        this.cameras.main.setZoom(0.98);
+                    } else {
+                        this.cameras.main.setZoom(1);
+                    }
+                    this.physics.velocityFromRotation(this.player.rotation, currentAccel, this.player.body.acceleration);
+                } else if(this.keys.S.isDown) {
+                    this.physics.velocityFromRotation(this.player.rotation, -spec.accel/1.5, this.player.body.acceleration);
+                } else {
+                    this.player.setAcceleration(0);
+                }
+
+                // --- 2. STEERING ---
+                const turnFactor = isMoving ? spec.turn : spec.turn * 0.5;
+                if(this.keys.A.isDown) this.player.setAngularVelocity(-turnFactor);
+                else if(this.keys.D.isDown) this.player.setAngularVelocity(turnFactor);
+                else this.player.setAngularVelocity(0);
+
+                // --- 3. EFFECTS ---
+                if(isMoving && (this.keys.A.isDown || this.keys.D.isDown)) {
+                    this.driftFX.emitParticleAt(this.player.x, this.player.y);
+                }
+
+                // --- 4. REGEN ---
+                if(!this.keys.SPACE.isDown && isMoving && this.nitro < 100) {
+                    this.nitro += 0.08;
+                }
+
+                // --- 5. UI UPDATES ---
+                this.updateHUD(speed);
+            }
+
+            updateHUD(speed) {
+                // KMH
+                const kmh = Math.floor(speed * 0.45);
+                document.getElementById('kmh-ui').innerText = kmh.toString().padStart(3, '0');
+
+                // Nitro
+                document.getElementById('nitro-percent').innerText = Math.floor(this.nitro) + '%';
+
+                // Rev Bar
+                const segments = document.querySelectorAll('.rev-segment');
+                const activeCount = Math.floor((speed / 1000) * 30);
+                segments.forEach((s, idx) => {
+                    s.className = 'rev-segment';
+                    if(idx < activeCount) {
+                        s.classList.add(idx > 24 ? 'rev-danger' : 'rev-active');
+                    }
+                });
+            }
+
+            collectOrb(player, orb) {
+                orb.destroy();
+                this.score += 500;
+                document.getElementById('score-display').innerText = `SCORE: ${this.score.toString().padStart(6, '0')}`;
+                this.cameras.main.flash(200, 0, 242, 255, 0.2);
+            }
+
+            handleCollision() {
+                if(this.player.body.speed > 200) {
+                    this.cameras.main.shake(200, 0.01);
+                }
+            }
+        }
+
+        const phaserConfig = {
+            type: Phaser.WEBGL,
+            width: window.innerWidth,
+            height: window.innerHeight,
+            backgroundColor: '#000',
+            physics: { default: 'arcade', arcade: { debug: false } },
+            scene: SpeedScene
+        };
+
+        window.addEventListener('resize', () => {
+            if(window.game) window.game.scale.resize(window.innerWidth, window.innerHeight);
+        });
+
+    </script>
+</body>
+</html>
