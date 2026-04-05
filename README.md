@@ -42,11 +42,11 @@ Paylaşılan kaynak kodunda (v16.1) aktif olan özellikler:
 
 ---
 
-## 🚀 Kurulum
+## 🚀 Oynama
 
-1.  Proje dosyalarını indirin.
-2.  `index.html` dosyasını modern bir tarayıcı (Chrome, Edge vb.) ile çalıştırın.
-3.  "Oyuna Başla" butonuna basarak LakrLakr5Dev sunumunu geçin ve simülasyona giriş yapın.
+1.  [Resmi Web Sitemize](speedstory.github.io) gidin.
+2.  `Oyuna Başla` butonuna basın.
+3.  Oyun otomatik olarak açılacak ve yüklenecektir.
 
 ---
 
