@@ -1,6 +1,6 @@
 # 🏎️ SpeedStory v16.1 | Premium Arcade Engine
 
-![Version](https://img.shields.io/badge/Version-16.1_Arcadia-00f2ff?style=for-the-badge)
+![Version](https://img.shields.io/badge/Version-16.1-00f2ff?style=for-the-badge)
 ![Tech](https://img.shields.io/badge/Made_With-Phaser_3-ff00ea?style=for-the-badge)
 ![Developer](https://img.shields.io/badge/Studio-LakrLakr5Dev-white?style=for-the-badge)
 
