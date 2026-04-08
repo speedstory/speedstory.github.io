@@ -1,27 +1,42 @@
 # 🏎️ SpeedStory v16.1
 
-![Version](https://img.shields.io/badge/Version-16.1-00f2ff?style=for-the-badge)
-![Tech](https://img.shields.io/badge/Made_With-Phaser_3-ff00ea?style=for-the-badge)
-![Developer](https://img.shields.io/badge/Studio-LakrLakr5Dev-white?style=for-the-badge)
+<p align="center">
+  <img src="https://img.shields.io/badge/Version-16.1-00f2ff?style=for-the-badge">
+  <img src="https://img.shields.io/badge/Made_With-Phaser_3-ff00ea?style=for-the-badge">
+  <img src="https://img.shields.io/badge/Studio-LakrLakr5Dev-white?style=for-the-badge">
+</p>
 
-**SpeedStory**, LakrLakr5Dev tarafından geliştirilen, Phaser 3 motoru üzerine inşa edilmiş yüksek performanslı bir arcade sürüş simülasyonudur. Proje, modern web teknolojilerini kullanarak akıcı bir tek oyunculu deneyim sunmaya odaklanır.
+<p align="center">
+  <b>⚡ Yüksek performanslı arcade sürüş deneyimi</b><br>
+  Modern web teknolojileri ile geliştirildi.
+</p>
 
 ---
 
 ## 🛠️ Mevcut Teknik Özellikler
 
-Paylaşılan kaynak kodunda (v16.1) aktif olan özellikler:
+* 🚗 **Dinamik Araç Seçimi**  
+  Executive Sedan, Neon Interceptor, Tokyo Drifter  
+  → `accel`, `turn`, `drag`, `max` parametreleri
 
-* **Dinamik Araç Seçimi:** Üç farklı araç tipi (Executive Sedan, Neon Interceptor, Tokyo Drifter) ve her araca özel tanımlanmış ivme (`accel`), dönüş hızı (`turn`), sürtünme (`drag`) ve maksimum hız (`max`) parametreleri.
-* **Gelişmiş CSS Arayüzü:** `backdrop-filter` (blur), `clip-path` (poligon kesimler) ve CSS animasyonları ile desteklenen modern yükleme, garaj ve HUD ekranları.
-* **Procedural City Generation:** 12.000 birimlik dünya üzerinde rastgele boyutlandırılmış binalar, neon pencereler ve enerji kürelerinden oluşan şehir yapısı.
-* **Nitro (N2O) Sistemi:** `SPACE` tuşu ile aktifleşen, hıza bağlı olarak kamera zoom efekti ve parçacık (particle) efekti tetikleyen enerji sistemi.
-* **HUD & Telemetri:** Anlık hızı (KMH) gösteren dijital panel ve hız seviyesine göre renk değiştiren 30 segmentli dinamik devir barı (Rev-Bar).
-* **Fizik & FX:** Arcade fizik motoru ile çarpışma anında kamera sarsıntısı, drift esnasında duman efekti ve nitro alevi efektleri.
+* 🎨 **Gelişmiş CSS Arayüzü**  
+  Blur efektleri, clip-path kesimler ve animasyonlar
+
+* 🌆 **Procedural City Generation**  
+  12.000 birimlik dinamik şehir sistemi
+
+* ⚡ **Nitro (N2O) Sistemi**  
+  SPACE ile hız patlaması + kamera zoom + particle FX
+
+* 📊 **HUD & Telemetri**  
+  KMH göstergesi + dinamik rev-bar sistemi
+
+* 💥 **Fizik & FX**  
+  Drift dumanı, çarpışma sarsıntısı, nitro alevi
 
 ---
 
-## 👥 Geliştirici Ekibi (LakrLakr5Dev)
+## 👥 Geliştirici Ekibi
 
 | Üye | Rol |
 | :--- | :--- |
@@ -36,18 +51,54 @@ Paylaşılan kaynak kodunda (v16.1) aktif olan özellikler:
 
 ## 🕹️ Kontroller
 
-* **W / S:** İleri / Geri (İvmelenme ve Fren)
-* **A / D:** Sol / Sağ (Yönlendirme)
-* **SPACE:** Nitro (Hız Takviyesi)
+| Tuş | Aksiyon |
+|-----|--------|
+| W / S | İleri / Geri |
+| A / D | Yönlendirme |
+| SPACE | Nitro |
 
 ---
 
-## 🚀 Oynama
+## 🚀 Oyuna Başla
 
-1.  [Resmi Web Sitemize](speedstory.github.io) gidin.
-2.  `Oyuna Başla` butonuna basın.
-3.  Oyun otomatik olarak açılacak ve yüklenecektir.
+<p align="center">
+  <a href="https://speedstory.github.io">
+    <img src="https://img.shields.io/badge/OYUNA_BAŞLA-00f2ff?style=for-the-badge&logo=gamepad&logoColor=black">
+  </a>
+</p>
 
 ---
 
-© 2026 **LakrLakr5Dev**. Tüm Hakları Saklıdır.
+## 💖 Destek Ol
+
+<p align="center">
+  <img src="https://img.shields.io/badge/Support_Development-ff4d6d?style=for-the-badge&logo=heart&logoColor=white">
+</p>
+
+<p align="center">
+  SpeedStory'yi geliştirmeye devam etmemize yardımcı ol 🚀
+</p>
+
+<p align="center">
+  <a href="mailto:atadev-donate@proton.me">
+    <img src="https://img.shields.io/badge/BAĞIŞ_YAP-00f2ff?style=for-the-badge&logo=protonmail&logoColor=black">
+  </a>
+</p>
+
+<p align="center">
+  <b>📧 atadev-donate@proton.me</b>
+</p>
+
+---
+
+## 🌟 Projeyi Destekle
+
+⭐ Repo'ya yıldız at  
+🔁 Arkadaşlarınla paylaş  
+💡 Geri bildirim ver  
+
+---
+
+<p align="center">
+  © 2026 <b>LakrLakr5Dev</b> — Tüm Hakları Saklıdır.
+</p>
